@@ -1,6 +1,4 @@
-extern crate intelflash;
-extern crate plain;
-extern crate uefi;
+// SPDX-License-Identifier: MIT
 
 use intelflash::{Rom, BiosFile, BiosSection, BiosSections, BiosVolume, BiosVolumes};
 use intelflash::{section, volume};
@@ -27,7 +25,7 @@ fn dump_lzma(compressed_data: &[u8], padding: &str) {
 
         {
             let mut stdin = child.stdin.take().unwrap();
-            let _write_result = stdin.write_all(&compressed_data);
+            let _write_result = stdin.write_all(compressed_data);
         }
 
         read_thread.join().unwrap().unwrap()
@@ -53,6 +51,7 @@ fn dump_guid_defined(section_data: &[u8], padding: &str) {
     let len = data.len() / 1024;
     println!("{}  {}: {} K", padding, guid, len);
 
+    #[allow(clippy::single_match)]
     match guid {
         SECTION_LZMA_COMPRESS_GUID => {
             let compressed_data = &section_data[mem::size_of::<section::GuidDefined>() ..];

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+
+use bitflags::bitflags;
 use plain::Plain;
 use uefi::guid::Guid;
 
@@ -72,9 +75,9 @@ impl Header {
             0x0D => HeaderKind::MmCore,
             0x0E => HeaderKind::MmStandalone,
             0x0F => HeaderKind::MmCoreStandalone,
-            oem @ 0xC0 ... 0xDF => HeaderKind::Oem(oem),
-            debug @ 0xE0 ... 0xEF => HeaderKind::Debug(debug),
-            ffs @ 0xF0 ... 0xFF => HeaderKind::Ffs(ffs),
+            oem @ 0xC0..=0xDF => HeaderKind::Oem(oem),
+            debug @ 0xE0..=0xEF => HeaderKind::Debug(debug),
+            ffs @ 0xF0..=0xFF => HeaderKind::Ffs(ffs),
             unknown => HeaderKind::Unknown(unknown)
         }
     }
