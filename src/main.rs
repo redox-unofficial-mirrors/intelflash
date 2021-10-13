@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-extern crate intelflash;
-extern crate plain;
-extern crate uefi;
-
 use intelflash::{Rom, BiosFile, BiosSection, BiosSections, BiosVolume, BiosVolumes};
 use intelflash::{section, volume};
 use std::{env, fs, io, mem, process, thread};

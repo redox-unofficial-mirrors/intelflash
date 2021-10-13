@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-#[macro_use]
-extern crate bitflags;
-extern crate plain;
-extern crate uefi;
-
 use std::{io, mem};
 
 #[derive(Copy, Clone, Debug)]
