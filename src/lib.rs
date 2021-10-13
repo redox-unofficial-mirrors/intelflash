@@ -114,9 +114,7 @@ impl<'a> Rom<'a> {
 
     pub fn bios(&self) -> io::Result<Option<Bios<'a>>> {
         if let Some(data) = self.get_region(RegionKind::Bios)? {
-            Ok(Some(Bios {
-                data: data
-            }))
+            Ok(Some(Bios { data }))
         } else {
             Ok(None)
         }
@@ -124,9 +122,7 @@ impl<'a> Rom<'a> {
 
     pub fn me(&self) -> io::Result<Option<Me<'a>>> {
         if let Some(data) = self.get_region(RegionKind::ManagementEngine)? {
-            Ok(Some(Me {
-                data: data
-            }))
+            Ok(Some(Me { data }))
         } else {
             Ok(None)
         }
@@ -139,9 +135,7 @@ pub struct Bios<'a> {
 
 impl<'a> Bios<'a> {
     pub fn new(data: &'a [u8]) -> io::Result<Bios> {
-        Ok(Bios {
-            data: data
-        })
+        Ok(Bios { data })
     }
 
     pub fn data(&self) -> &'a [u8] {
@@ -196,7 +190,7 @@ impl<'a> Iterator for BiosVolumes<'a> {
                 */
 
                 return Some(BiosVolume {
-                    header: header,
+                    header,
                     data: &header_data[header.header_length as usize .. header.length as usize]
                 });
             } else {
@@ -245,24 +239,24 @@ impl<'a> Iterator for BiosFiles<'a> {
     type Item = BiosFile<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.i + mem::size_of::<file::Header>() <= self.data.len() {
+        if self.i + mem::size_of::<file::Header>() <= self.data.len() {
             let header_data = &self.data[self.i..];
             let header = plain::from_bytes::<file::Header>(header_data).unwrap();
 
             if header.size() == 0xFFFFFF {
                 self.i = self.data.len();
-                break;
+                None
+            } else {
+                self.i += ((header.size() + 7) / 8) * 8;
+
+                Some(BiosFile {
+                    header,
+                    data: &header_data[mem::size_of::<file::Header>() .. header.size()]
+                })
             }
-
-            self.i += ((header.size() + 7) / 8) * 8;
-
-            return Some(BiosFile {
-                header: header,
-                data: &header_data[mem::size_of::<file::Header>() .. header.size()]
-            });
+        } else {
+            None
         }
-
-        None
     }
 }
 
@@ -303,24 +297,25 @@ impl<'a> Iterator for BiosSections<'a> {
     type Item = BiosSection<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.i + mem::size_of::<section::Header>() <= self.data.len() {
+        if self.i + mem::size_of::<section::Header>() <= self.data.len() {
             let header_data = &self.data[self.i..];
             let header = plain::from_bytes::<section::Header>(header_data).unwrap();
 
             if header.size() == 0xFFFFFF {
                 self.i = self.data.len();
-                break;
+                None
+            } else {
+
+                self.i += ((header.size() + 3) / 4) * 4;
+
+                Some(BiosSection {
+                    header,
+                    data: &header_data[mem::size_of::<section::Header>() .. header.size()]
+                })
             }
-
-            self.i += ((header.size() + 3) / 4) * 4;
-
-            return Some(BiosSection {
-                header: header,
-                data: &header_data[mem::size_of::<section::Header>() .. header.size()]
-            });
+        } else {
+            None
         }
-
-        None
     }
 }
 
@@ -345,9 +340,7 @@ pub struct Me<'a> {
 
 impl<'a> Me<'a> {
     pub fn new(data: &'a [u8]) -> io::Result<Me> {
-        Ok(Me {
-            data: data
-        })
+        Ok(Me { data })
     }
 
     pub fn data(&self) -> &'a [u8] {
