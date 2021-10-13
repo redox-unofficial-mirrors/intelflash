@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use plain::Plain;
 use uefi::guid::Guid;
 

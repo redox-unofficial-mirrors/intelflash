@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 extern crate intelflash;
 extern crate plain;
 extern crate uefi;
