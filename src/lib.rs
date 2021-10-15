@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-use std::{io, mem};
+use core::{fmt, mem};
+use std::io;
 
 #[derive(Copy, Clone, Debug)]
 #[repr(usize)]
@@ -14,6 +15,21 @@ pub enum RegionKind {
     Reserved6 = 6,
     Reserved7 = 7,
     EmbeddedController = 8,
+}
+
+impl fmt::Display for RegionKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            RegionKind::Descriptor => "Flash Descriptor",
+            RegionKind::Bios => "BIOS",
+            RegionKind::ManagementEngine => "Intel ME",
+            RegionKind::Ethernet => "GbE",
+            RegionKind::PlatformData => "Platform Data",
+            RegionKind::EmbeddedController => "EC",
+            _ => "Reserved",
+        };
+        write!(f, "{}", name)
+    }
 }
 
 pub const HAP: u32 = 0x10000;
