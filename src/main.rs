@@ -118,11 +118,15 @@ fn dump_volume(volume: &BiosVolume, padding: &str) {
     }
 }
 
-fn intelflash(path: &str) -> io::Result<()> {
+fn intelflash(path: &str) -> Result<(), String> {
     println!("{}", path);
 
     let mut data = Vec::new();
-    fs::File::open(path)?.read_to_end(&mut data)?;
+    fs::File::open(path).map_err(|err| {
+        format!("failed to open {}: {}", path, err)
+    })?.read_to_end(&mut data).map_err(|err| {
+        format!("failed to read {}: {}", path, err)
+    })?;
 
     let rom = Rom::new(&data)?;
 

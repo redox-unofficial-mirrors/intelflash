@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+#![no_std]
+
+#[macro_use]
+extern crate alloc;
+
+use alloc::string::String;
 use core::{fmt, mem};
-use std::io;
 
 #[derive(Copy, Clone, Debug)]
 #[repr(usize)]
@@ -45,7 +50,7 @@ pub struct Rom<'a> {
 }
 
 impl<'a> Rom<'a> {
-    pub fn new(data: &'a [u8]) -> io::Result<Rom> {
+    pub fn new(data: &'a [u8]) -> Result<Rom, String> {
         let mut i = 16;
 
         while i + mem::size_of::<flash::Descriptor>() <= data.len() {
@@ -53,7 +58,7 @@ impl<'a> Rom<'a> {
                 return Ok(Rom {
                     data: &data[i - 16..],
                     descriptor: plain::from_bytes(&data[i..]).map_err(|err| {
-                        io::Error::new(io::ErrorKind::InvalidData, format!("Flash descriptor invalid: {:?}", err))
+                        format!("Flash descriptor invalid: {:?}", err)
                     })?
                 });
             }
@@ -61,7 +66,7 @@ impl<'a> Rom<'a> {
             i += 4;
         }
 
-        Err(io::Error::new(io::ErrorKind::NotFound, "Flash descriptor not found"))
+        Err(format!("Flash descriptor not found"))
     }
 
     pub fn data(&self) -> &'a [u8] {
@@ -72,36 +77,36 @@ impl<'a> Rom<'a> {
         self.descriptor
     }
 
-    pub fn flash_region(&self) -> io::Result<&'a flash::Region> {
+    pub fn flash_region(&self) -> Result<&'a flash::Region, String> {
         let offset = (((self.descriptor.map0 >> 16) & 0xff) << 4) as usize;
 
         if offset >= self.data.len() {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "Flash region table truncated"))
+            return Err(format!("Flash region table truncated"))
         }
 
         plain::from_bytes(&self.data[offset..]).map_err(|err| {
-            io::Error::new(io::ErrorKind::InvalidData, format!("Flash region table invalid: {:?}", err))
+            format!("Flash region table invalid: {:?}", err)
         })
     }
 
-    pub fn flash_pchstrap(&self) -> io::Result<&'a flash::PchStrap> {
+    pub fn flash_pchstrap(&self) -> Result<&'a flash::PchStrap, String> {
         let offset = (((self.descriptor.map1 >> 16) & 0xff) << 4) as usize;
 
         if offset >= self.data.len() {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "PCHSTRAP table truncated"))
+            return Err(format!("PCHSTRAP table truncated"))
         }
 
         plain::from_bytes(&self.data[offset..]).map_err(|err| {
-            io::Error::new(io::ErrorKind::InvalidData, format!("PCHSTRAP table invalid: {:?}", err))
+            format!("PCHSTRAP table invalid: {:?}", err)
         })
     }
 
-    pub fn high_assurance_platform(&self) -> io::Result<bool> {
+    pub fn high_assurance_platform(&self) -> Result<bool, String> {
         let pchstrap = self.flash_pchstrap()?;
         Ok(pchstrap.data[0] & HAP == HAP)
     }
 
-    pub fn get_region(&self, kind: RegionKind) -> io::Result<Option<&'a [u8]>> {
+    pub fn get_region_base_limit(&self, kind: RegionKind) -> Result<Option<(usize, usize)>, String> {
         let frba = self.flash_region()?;
 
         let reg = frba.data[kind as usize];
@@ -113,17 +118,25 @@ impl<'a> Rom<'a> {
     	let limit = ((reg & limit_mask) >> 4) | 0xfff;
 
         if limit > base {
+            Ok(Some((base as usize, limit as usize)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn get_region(&self, kind: RegionKind) -> Result<Option<&'a [u8]>, String> {
+        if let Some((base, limit)) = self.get_region_base_limit(kind)? {
             if (limit as usize) < self.data.len() {
                 Ok(Some(&self.data[base as usize..limit as usize + 1]))
             } else {
-                Err(io::Error::new(io::ErrorKind::InvalidData, format!("{:?} region invalid: {} >= {}", kind, limit, self.data.len())))
+                Err(format!("{:?} region invalid: {} >= {}", kind, limit, self.data.len()))
             }
         } else {
             Ok(None)
         }
     }
 
-    pub fn bios(&self) -> io::Result<Option<Bios<'a>>> {
+    pub fn bios(&self) -> Result<Option<Bios<'a>>, String> {
         if let Some(data) = self.get_region(RegionKind::Bios)? {
             Ok(Some(Bios { data }))
         } else {
@@ -131,7 +144,7 @@ impl<'a> Rom<'a> {
         }
     }
 
-    pub fn me(&self) -> io::Result<Option<Me<'a>>> {
+    pub fn me(&self) -> Result<Option<Me<'a>>, String> {
         if let Some(data) = self.get_region(RegionKind::ManagementEngine)? {
             Ok(Some(Me { data }))
         } else {
@@ -145,7 +158,7 @@ pub struct Bios<'a> {
 }
 
 impl<'a> Bios<'a> {
-    pub fn new(data: &'a [u8]) -> io::Result<Bios> {
+    pub fn new(data: &'a [u8]) -> Result<Bios, String> {
         Ok(Bios { data })
     }
 
@@ -350,7 +363,7 @@ pub struct Me<'a> {
 }
 
 impl<'a> Me<'a> {
-    pub fn new(data: &'a [u8]) -> io::Result<Me> {
+    pub fn new(data: &'a [u8]) -> Result<Me, String> {
         Ok(Me { data })
     }
 
