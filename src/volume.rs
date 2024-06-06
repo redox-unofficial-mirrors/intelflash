@@ -5,6 +5,8 @@ use plain::Plain;
 use uefi::guid::Guid;
 
 bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct Attributes: u32 {
         const READ_DISABLED_CAP = 0x00000001;
         const READ_ENABLED_CAP = 0x00000002;
