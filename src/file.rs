@@ -28,6 +28,8 @@ pub enum HeaderKind {
 }
 
 bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct Attributes: u8 {
         const ATTRIB_TAIL_PRESENT = 0x01;
         const ATTRIB_RECOVERY = 0x02;
@@ -37,6 +39,8 @@ bitflags! {
 }
 
 bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct State: u8 {
         const STATE_HEADER_CONSTRUCTION = 0x01;
         const STATE_HEADER_VALID = 0x02;
